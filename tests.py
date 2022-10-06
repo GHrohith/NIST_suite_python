@@ -1,6 +1,6 @@
-from math import floor, sqrt, erfc
+from math import floor, log, sqrt, erfc
 from scipy.special import gammaincc
-from numpy import matrix
+from numpy import matrix, fft
 from numpy.linalg import matrix_rank
 
 def frequency(stream: str):
@@ -36,8 +36,8 @@ def blockFrequency(stream: str):
 
 def matrixRank(stream: str):
     n = len(stream)
-    rowNum = 3
-    colNum = 3
+    rowNum = 32
+    colNum = 32
     blockNums = floor(n / (rowNum*colNum))
 
     Fm = Fm_1 = 0
@@ -64,14 +64,35 @@ def matrixRank(stream: str):
     p_value = gammaincc(2/2, X_obs/2)
     return(p_value)
 
+def dftSpectral(stream: str):
+    n = len(stream)
+
+    X = [(2*int(bit) -1) for bit in stream]
+
+    fft_X = fft.fft(X)
+    fft_X = fft_X[0:floor(n/2)]
+    M = [abs(x) for x in fft_X]
+
+    threshold = sqrt(n * log(20))
+
+    N0 = 0.95 * floor(n / 2)
+    N1 = sum([1 for m in M if m < threshold])
+
+    d = (N1 - N0) / sqrt(n * 0.95 * 0.05 / 4)
+    p_value = erfc(abs(d) / sqrt(2))
+
+    return p_value
+
 def main():
     str1 = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000"
     str2 = "0110011010"
     str3 = "01011001001010101101"
+    str4 = "1001010011"
 
     # print(frequency(str))
     # print(blockFrequency(str1))
-    print(matrixRank(str3))
+    # print(matrixRank(str3))
+    print(dftSpectral(str4))
 
 if __name__ == "__main__":
     main()
